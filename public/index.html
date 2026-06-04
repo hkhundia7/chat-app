@@ -6,7 +6,6 @@
   <title>Chat App</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #111b21;
@@ -14,8 +13,6 @@
       display: flex;
       flex-direction: column;
     }
-
-    /* HEADER */
     #header {
       background: #202c33;
       color: white;
@@ -44,8 +41,6 @@
       cursor: pointer;
       font-size: 12px;
     }
-
-    /* MESSAGES */
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -62,7 +57,6 @@
       font-size: 14px;
       line-height: 1.4;
       word-wrap: break-word;
-      position: relative;
     }
     .mine {
       background: #005c4b;
@@ -88,8 +82,6 @@
       text-align: right;
       margin-top: 3px;
     }
-
-    /* INPUT */
     #input-area {
       background: #202c33;
       padding: 10px 12px;
@@ -119,22 +111,22 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* AI FLOATING BUTTON */
+    /* HIDDEN AI BUTTON - very subtle */
     #ai-fab {
       position: fixed;
-      bottom: 80px;
-      right: 16px;
-      width: 52px; height: 52px;
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      bottom: 75px;
+      right: 12px;
+      width: 28px; height: 28px;
+      background: rgba(124,58,237,0.15);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(124,58,237,0.5);
       z-index: 100;
-      font-size: 22px;
-      transition: transform 0.2s;
+      font-size: 13px;
+      opacity: 0.3;
+      transition: opacity 0.3s;
     }
-    #ai-fab:hover { transform: scale(1.1); }
+    #ai-fab:hover { opacity: 1; }
 
     /* AI PANEL */
     #ai-panel {
@@ -144,29 +136,32 @@
       z-index: 200;
       display: none;
       flex-direction: column;
+    }
+    #ai-panel.open {
+      display: flex;
       animation: slideUp 0.3s ease;
     }
-    #ai-panel.open { display: flex; }
-
     @keyframes slideUp {
       from { transform: translateY(100%); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-
     #ai-header {
       background: #202c33;
       padding: 12px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
-      color: white;
     }
     #ai-back {
       background: none;
       border: none;
       color: #8696a0;
-      font-size: 22px;
+      font-size: 13px;
       cursor: pointer;
+      padding: 6px 12px;
+      border: 1px solid #2a3942;
+      border-radius: 20px;
+      color: #e9edef;
     }
     #ai-avatar {
       width: 38px; height: 38px;
@@ -177,7 +172,6 @@
     }
     #ai-info h3 { font-size: 15px; color: #e9edef; }
     #ai-info p { font-size: 12px; color: #00a884; }
-
     #ai-messages {
       flex: 1;
       overflow-y: auto;
@@ -193,6 +187,7 @@
       font-size: 14px;
       line-height: 1.5;
       word-wrap: break-word;
+      white-space: pre-wrap;
     }
     .ai-msg.user {
       background: #005c4b;
@@ -215,7 +210,6 @@
       font-size: 13px;
       font-style: italic;
     }
-
     #ai-input-area {
       background: #202c33;
       padding: 10px 12px;
@@ -248,7 +242,6 @@
 </head>
 <body>
 
-  <!-- MAIN CHAT -->
   <div id="header">
     <div id="header-left">
       <div id="avatar">👥</div>
@@ -267,20 +260,22 @@
     <button id="send-btn">➤</button>
   </div>
 
-  <!-- AI FLOATING BUTTON -->
-  <div id="ai-fab" onclick="openAI()">🤖</div>
+  <!-- HIDDEN AI BUTTON -->
+  <div id="ai-fab" onclick="openAI()" title="AI">🟣</div>
 
   <!-- AI PANEL -->
   <div id="ai-panel">
     <div id="ai-header">
-      <button id="ai-back" onclick="closeAI()">←</button>
+      <button id="ai-back" onclick="closeAI()">← Back to Chat</button>
       <div id="ai-avatar">🤖</div>
       <div id="ai-info">
         <h3>AI Assistant</h3>
-        <p>Always here to help</p>
+        <p>● Online</p>
       </div>
     </div>
-    <div id="ai-messages"></div>
+    <div id="ai-messages">
+      <!-- welcome message added by JS -->
+    </div>
     <div id="ai-input-area">
       <input id="ai-input" type="text" placeholder="Ask me anything..." autocomplete="off"/>
       <button id="ai-send-btn">➤</button>
@@ -292,6 +287,9 @@
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     if (!token) window.location.href = '/login.html';
+
+    // YOUR GEMINI API KEY
+    const GEMINI_API_KEY = 'AQ.Ab8RN6I_hTTxOwkfk1qtl8nbBPKg7WgLsBzbTEIlgiJimBDT7g';
 
     const socket = io();
     const input = document.getElementById('msg-input');
@@ -321,23 +319,19 @@
     socket.on('chat message', (data) => {
       const div = document.createElement('div');
       div.classList.add('message', data.username === username ? 'mine' : 'others');
-
       if (data.username !== username) {
         const name = document.createElement('div');
         name.classList.add('msg-username');
         name.textContent = data.username;
         div.appendChild(name);
       }
-
       const text = document.createElement('div');
       text.textContent = data.text;
       div.appendChild(text);
-
       const time = document.createElement('div');
       time.classList.add('msg-time');
       time.textContent = getTime();
       div.appendChild(time);
-
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     });
@@ -353,123 +347,55 @@
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
     const aiSendBtn = document.getElementById('ai-send-btn');
+    const aiHistory = [];
 
-    function openAI() { aiPanel.classList.add('open'); }
+    function openAI() {
+      aiPanel.classList.add('open');
+      if (aiMessages.children.length === 0) {
+        addAIMessage("Hey! 👋 I'm your AI assistant. Ask me anything about JavaScript, CSS, or anything else!", 'bot');
+      }
+    }
+
     function closeAI() { aiPanel.classList.remove('open'); }
 
     aiSendBtn.addEventListener('click', sendAIMessage);
     aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendAIMessage(); });
 
     async function sendAIMessage() {
-  const msg = aiInput.value.trim();
-  if (!msg) return;
-  aiInput.value = '';
+      const msg = aiInput.value.trim();
+      if (!msg) return;
+      aiInput.value = '';
 
-  addAIMessage(msg, 'user');
+      addAIMessage(msg, 'user');
+      aiHistory.push({ role: 'user', parts: [{ text: msg }] });
 
-  const typing = document.createElement('div');
-  typing.classList.add('typing');
-  typing.textContent = 'AI is typing...';
-  aiMessages.appendChild(typing);
-  aiMessages.scrollTop = aiMessages.scrollHeight;
+      const typing = document.createElement('div');
+      typing.classList.add('typing');
+      typing.textContent = 'AI is typing...';
+      aiMessages.appendChild(typing);
+      aiMessages.scrollTop = aiMessages.scrollHeight;
 
-  await new Promise(r => setTimeout(r, 1000));
-  typing.remove();
-
-  const reply = getAIReply(msg.toLowerCase());
-  addAIMessage(reply, 'bot');
-}
-
-function getAIReply(msg) {
-  // Greetings
-  if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey'))
-    return "Hey! 👋 I'm Nova, your JS & CSS tutor! Ask me anything about JavaScript or CSS 😊";
-  if (msg.includes('how are you'))
-    return "I'm great and ready to teach! 🚀 What JS or CSS topic are you studying today?";
-  if (msg.includes('name'))
-    return "I'm Nova 🤖 — your personal JavaScript & CSS tutor! Ask me anything!";
-  if (msg.includes('thank'))
-    return "You're welcome! Keep learning, you're doing great! 💪😊";
-  if (msg.includes('bye'))
-    return "Goodbye! Keep practicing your JS & CSS! 👋😊";
-
-  // JAVASCRIPT TOPICS
-  if (msg.includes('variable') || msg.includes('var') || msg.includes('let') || msg.includes('const'))
-    return `Variables in JS 📦:\n\n• var — old way, avoid using\n• let — use when value changes\n• const — use when value never changes\n\nExample:\nlet name = 'Manu';\nconst age = 20;\n\nAlways prefer const, use let when needed! ✅`;
-
-  if (msg.includes('function'))
-    return `Functions in JS ⚙️:\n\nNormal function:\nfunction greet() {\n  console.log('Hello!');\n}\n\nArrow function:\nconst greet = () => {\n  console.log('Hello!');\n}\n\nArrow functions are modern and shorter! ✅`;
-
-  if (msg.includes('arrow'))
-    return `Arrow Functions ➡️:\n\nOld way:\nfunction add(a, b) {\n  return a + b;\n}\n\nArrow way:\nconst add = (a, b) => a + b;\n\nShorter and cleaner! Used a lot in modern JS 🔥`;
-
-  if (msg.includes('array'))
-    return `Arrays in JS 📋:\n\nconst fruits = ['apple', 'mango', 'banana'];\n\nUseful methods:\n• fruits.push('orange') — add item\n• fruits.pop() — remove last\n• fruits.length — count items\n• fruits.map() — loop and transform\n• fruits.filter() — filter items\n\nArrays are super important in JS! 💪`;
-
-  if (msg.includes('object'))
-    return `Objects in JS 🧩:\n\nconst person = {\n  name: 'Manu',\n  age: 20,\n  greet() {\n    console.log('Hi!');\n  }\n};\n\nAccess: person.name or person['name']\n\nObjects store related data together! 🔥`;
-
-  if (msg.includes('loop') || msg.includes('for') || msg.includes('while'))
-    return `Loops in JS 🔄:\n\nfor loop:\nfor (let i = 0; i < 5; i++) {\n  console.log(i);\n}\n\nforEach (for arrays):\nfruits.forEach(fruit => {\n  console.log(fruit);\n});\n\nwhile loop:\nwhile (i < 5) {\n  i++;\n}\n\nfor loops are most common! ✅`;
-
-  if (msg.includes('if') || msg.includes('else') || msg.includes('condition'))
-    return `Conditions in JS 🔀:\n\nif (age > 18) {\n  console.log('Adult');\n} else if (age === 18) {\n  console.log('Just turned 18!');\n} else {\n  console.log('Minor');\n}\n\nShort version (ternary):\nconst result = age > 18 ? 'Adult' : 'Minor';\n\nTernary is great for simple conditions! ✅`;
-
-  if (msg.includes('promise') || msg.includes('async') || msg.includes('await'))
-    return `Async/Await in JS ⏳:\n\nasync function getData() {\n  try {\n    const res = await fetch('url');\n    const data = await res.json();\n    console.log(data);\n  } catch (err) {\n    console.log('Error:', err);\n  }\n}\n\nAsync/await makes handling API calls easy! 🔥`;
-
-  if (msg.includes('fetch') || msg.includes('api'))
-    return `Fetch API in JS 🌐:\n\nfetch('https://api.example.com/data')\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.log(err));\n\nModern way with async/await:\nconst res = await fetch('url');\nconst data = await res.json();\n\nUsed to get data from the internet! 🚀`;
-
-  if (msg.includes('event') || msg.includes('addeventlistener') || msg.includes('click'))
-    return `Events in JS 🖱️:\n\nconst btn = document.getElementById('btn');\n\nbtn.addEventListener('click', () => {\n  console.log('Button clicked!');\n});\n\nCommon events:\n• click\n• keypress\n• mouseover\n• submit\n• change\n\nEvents make your page interactive! ✅`;
-
-  if (msg.includes('dom') || msg.includes('document') || msg.includes('getelementby'))
-    return `DOM in JS 🌳:\n\nSelect elements:\ndocument.getElementById('id')\ndocument.querySelector('.class')\n\nChange content:\nelement.textContent = 'Hello!';\nelement.innerHTML = '<b>Bold</b>';\n\nChange style:\nelement.style.color = 'red';\n\nDOM lets you control the webpage! 🔥`;
-
-  if (msg.includes('class') || msg.includes('constructor') || msg.includes('oop'))
-    return `Classes in JS 🏗️:\n\nclass Person {\n  constructor(name, age) {\n    this.name = name;\n    this.age = age;\n  }\n  greet() {\n    return 'Hi, I am ' + this.name;\n  }\n}\n\nconst p = new Person('Manu', 20);\np.greet();\n\nClasses help organize code! 💪`;
-
-  if (msg.includes('localstorage') || msg.includes('storage'))
-    return `LocalStorage in JS 💾:\n\n// Save data\nlocalStorage.setItem('name', 'Manu');\n\n// Get data\nconst name = localStorage.getItem('name');\n\n// Delete\nlocalStorage.removeItem('name');\n\nData stays even after closing browser! ✅`;
-
-  // CSS TOPICS
-  if (msg.includes('flexbox') || msg.includes('flex'))
-    return `Flexbox in CSS 📐:\n\n.container {\n  display: flex;\n  justify-content: center; /* horizontal */\n  align-items: center;     /* vertical */\n  gap: 10px;\n}\n\njustify-content values:\n• flex-start, flex-end\n• center, space-between\n\nBest for 1D layouts! 🔥`;
-
-  if (msg.includes('grid'))
-    return `CSS Grid 🔲:\n\n.container {\n  display: grid;\n  grid-template-columns: 1fr 1fr 1fr;\n  gap: 10px;\n}\n\nMakes 3 equal columns!\n\nUseful properties:\n• grid-template-rows\n• grid-column: span 2\n• place-items: center\n\nBest for 2D layouts! 💪`;
-
-  if (msg.includes('position'))
-    return `CSS Position 📌:\n\n• static — default\n• relative — relative to itself\n• absolute — relative to parent\n• fixed — fixed on screen\n• sticky — sticks on scroll\n\nExample:\n.box {\n  position: absolute;\n  top: 10px;\n  right: 20px;\n}\n\nposition: fixed is used for navbars! ✅`;
-
-  if (msg.includes('media query') || msg.includes('responsive') || msg.includes('mobile'))
-    return `Media Queries 📱:\n\n/* Mobile first */\n.box {\n  width: 100%;\n}\n\n/* Tablet */\n@media (min-width: 768px) {\n  .box { width: 50%; }\n}\n\n/* Desktop */\n@media (min-width: 1024px) {\n  .box { width: 33%; }\n}\n\nMakes your site responsive! 🔥`;
-
-  if (msg.includes('animation') || msg.includes('transition') || msg.includes('keyframe'))
-    return `CSS Animations ✨:\n\nTransition (simple):\n.btn {\n  transition: background 0.3s ease;\n}\n.btn:hover {\n  background: red;\n}\n\nKeyframe animation:\n@keyframes fadeIn {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n.box {\n  animation: fadeIn 1s ease;\n}\n\nMakes your UI feel alive! 🎨`;
-
-  if (msg.includes('selector') || msg.includes('pseudo'))
-    return `CSS Selectors 🎯:\n\n• .class — selects class\n• #id — selects id\n• * — selects all\n• div p — p inside div\n• div > p — direct child\n\nPseudo selectors:\n• :hover — on mouse over\n• :first-child — first element\n• :nth-child(2) — second element\n• ::before / ::after — fake elements\n\nSelectors are very powerful! 💪`;
-
-  if (msg.includes('box model') || msg.includes('margin') || msg.includes('padding') || msg.includes('border'))
-    return `CSS Box Model 📦:\n\n.box {\n  width: 200px;\n  padding: 20px;  /* inside space */\n  border: 2px solid black;\n  margin: 10px;   /* outside space */\n}\n\nRemember:\n• padding — space inside border\n• margin — space outside border\n• box-sizing: border-box — includes padding in width! ✅`;
-
-  if (msg.includes('color') || msg.includes('background'))
-    return `Colors in CSS 🎨:\n\n/* Different ways */\ncolor: red;\ncolor: #ff0000;\ncolor: rgb(255, 0, 0);\ncolor: rgba(255, 0, 0, 0.5); /* with opacity */\n\n/* Gradient background */\nbackground: linear-gradient(135deg, #667eea, #764ba2);\n\nrgba is great for transparent colors! ✨`;
-
-  // General
-  if (msg.includes('what can you') || msg.includes('help') || msg.includes('topic'))
-    return `I can teach you 📚:\n\nJavaScript:\n• Variables, Functions, Arrays\n• Objects, Loops, Conditions\n• DOM, Events, Fetch API\n• Async/Await, Classes\n• LocalStorage\n\nCSS:\n• Flexbox, Grid, Position\n• Media Queries, Animations\n• Selectors, Box Model, Colors\n\nJust ask about any topic! 🚀`;
-
-  const defaults = [
-    "Could you be more specific? Ask me about a JS or CSS topic! 😊",
-    "Try asking about JavaScript or CSS concepts! I know a lot 🤓",
-    "Hmm, not sure about that. Ask me about JS functions, arrays, flexbox, etc! 💡",
-    "I'm best at JavaScript and CSS! Ask me anything about them 🔥",
-  ];
-  return defaults[Math.floor(Math.random() * defaults.length)];
-}
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: aiHistory,
+            systemInstruction: {
+              parts: [{ text: "You are a helpful coding assistant specializing in JavaScript and CSS. Keep answers clear, concise and friendly. Use emojis sometimes. Format code nicely." }]
+            }
+          })
+        });
+        const data = await res.json();
+        typing.remove();
+        const reply = data.candidates[0].content.parts[0].text;
+        aiHistory.push({ role: 'model', parts: [{ text: reply }] });
+        addAIMessage(reply, 'bot');
+      } catch (err) {
+        typing.remove();
+        addAIMessage('Sorry, something went wrong! Try again 😅', 'bot');
+      }
+    }
 
     function addAIMessage(text, type) {
       const div = document.createElement('div');
@@ -479,6 +405,5 @@ function getAIReply(msg) {
       aiMessages.scrollTop = aiMessages.scrollHeight;
     }
   </script>
-
 </body>
 </html>
