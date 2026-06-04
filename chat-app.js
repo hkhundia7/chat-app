@@ -19,6 +19,11 @@ app.use(express.static('public'));
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+// Gemini key route
+app.get('/config', (req, res) => {
+  res.json({ geminiKey: process.env.GEMINI_API_KEY });
+});
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected!'))
@@ -27,11 +32,9 @@ mongoose.connect(process.env.MONGO_URI)
 // Socket.io — Chat
 io.on('connection', (socket) => {
   console.log('A user connected');
-
   socket.on('chat message', (data) => {
     io.emit('chat message', data);
   });
-
   socket.on('disconnect', () => {
     console.log('A user disconnected');
   });
