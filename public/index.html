@@ -289,7 +289,13 @@
     if (!token) window.location.href = '/login.html';
 
     // YOUR GEMINI API KEY
-    const GEMINI_API_KEY = 'GEMINI_KEY';
+ let GEMINI_API_KEY = '';
+async function loadConfig() {
+  const res = await fetch('/config');
+  const data = await res.json();
+  GEMINI_API_KEY = data.geminiKey;
+}
+loadConfig();
 
     const socket = io();
     const input = document.getElementById('msg-input');
