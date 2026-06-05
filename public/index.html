@@ -111,7 +111,7 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* HIDDEN AI BUTTON - very subtle */
+    /* HIDDEN AI BUTTON */
     #ai-fab {
       position: fixed;
       bottom: 75px;
@@ -154,14 +154,12 @@
     }
     #ai-back {
       background: none;
-      border: none;
-      color: #8696a0;
-      font-size: 13px;
-      cursor: pointer;
-      padding: 6px 12px;
       border: 1px solid #2a3942;
       border-radius: 20px;
       color: #e9edef;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 12px;
     }
     #ai-avatar {
       width: 38px; height: 38px;
@@ -273,9 +271,7 @@
         <p>● Online</p>
       </div>
     </div>
-    <div id="ai-messages">
-      <!-- welcome message added by JS -->
-    </div>
+    <div id="ai-messages"></div>
     <div id="ai-input-area">
       <input id="ai-input" type="text" placeholder="Ask me anything..." autocomplete="off"/>
       <button id="ai-send-btn">➤</button>
@@ -288,14 +284,14 @@
     const username = localStorage.getItem('username');
     if (!token) window.location.href = '/login.html';
 
-    // YOUR GEMINI API KEY
- let GEMINI_API_KEY = '';
-async function loadConfig() {
-  const res = await fetch('/config');
-  const data = await res.json();
-  GEMINI_API_KEY = data.geminiKey;
-}
-loadConfig();
+    // Load Groq API key from server
+    let GROQ_API_KEY = '';
+    async function loadConfig() {
+      const res = await fetch('/config');
+      const data = await res.json();
+      GROQ_API_KEY = data.groqKey;
+    }
+    loadConfig();
 
     const socket = io();
     const input = document.getElementById('msg-input');
@@ -358,7 +354,7 @@ loadConfig();
     function openAI() {
       aiPanel.classList.add('open');
       if (aiMessages.children.length === 0) {
-        addAIMessage("Hey! 👋 I'm your AI assistant. Ask me anything about JavaScript, CSS, or anything else!", 'bot');
+        addAIMessage("Hey! 👋 I'm your AI assistant powered by Groq. Ask me anything!", 'bot');
       }
     }
 
@@ -373,7 +369,7 @@ loadConfig();
       aiInput.value = '';
 
       addAIMessage(msg, 'user');
-      aiHistory.push({ role: 'user', parts: [{ text: msg }] });
+      aiHistory.push({ role: 'user', content: msg });
 
       const typing = document.createElement('div');
       typing.classList.add('typing');
@@ -382,20 +378,24 @@ loadConfig();
       aiMessages.scrollTop = aiMessages.scrollHeight;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
           body: JSON.stringify({
-            contents: aiHistory,
-            systemInstruction: {
-              parts: [{ text: "You are a helpful coding assistant specializing in JavaScript and CSS. Keep answers clear, concise and friendly. Use emojis sometimes. Format code nicely." }]
-            }
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: 'You are a helpful coding assistant specializing in JavaScript and CSS. Keep answers clear, concise and friendly. Use emojis sometimes. Format code nicely.' },
+              ...aiHistory
+            ]
           })
         });
         const data = await res.json();
         typing.remove();
-        const reply = data.candidates[0].content.parts[0].text;
-        aiHistory.push({ role: 'model', parts: [{ text: reply }] });
+        const reply = data.choices[0].message.content;
+        aiHistory.push({ role: 'assistant', content: reply });
         addAIMessage(reply, 'bot');
       } catch (err) {
         typing.remove();

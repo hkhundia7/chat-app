@@ -19,9 +19,8 @@ app.use(express.static('public'));
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
-// Gemini key route
 app.get('/config', (req, res) => {
-  res.json({ geminiKey: process.env.GEMINI_API_KEY });
+  res.json({ groqKey: process.env.GROQ_API_KEY });
 });
 
 // Connect to MongoDB
