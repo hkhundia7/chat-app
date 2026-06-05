@@ -418,7 +418,7 @@
     }
     loadConfig();
 
-    const socket = io();
+    const socket = io({ auth: { token } });
     const input = document.getElementById('msg-input');
     const messagesEl = document.getElementById('messages');
     const sendBtn = document.getElementById('send-btn');
