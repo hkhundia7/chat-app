@@ -6,236 +6,366 @@
   <title>Chat App</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #212121;
+      --surface: #2f2f2f;
+      --surface2: #3a3a3a;
+      --border: rgba(255,255,255,0.1);
+      --text: #ececec;
+      --text-muted: #8e8ea0;
+      --accent: #e8a838;
+      --input-bg: #2f2f2f;
+      --send: #e8a838;
+    }
+
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #111b21;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
       height: 100vh;
       display: flex;
       flex-direction: column;
+      color: var(--text);
     }
+
     #header {
-      background: #202c33;
-      color: white;
-      padding: 12px 16px;
+      padding: 14px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
     }
     #header-left { display: flex; align-items: center; gap: 10px; }
     #avatar {
-      width: 38px; height: 38px;
-      background: #00a884;
+      width: 32px; height: 32px;
+      background: var(--surface2);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      font-size: 15px;
+      border: 1px solid var(--border);
     }
-    #header-info h3 { font-size: 15px; color: #e9edef; }
-    #header-info p { font-size: 12px; color: #8696a0; }
+    #header-info h3 { font-size: 15px; font-weight: 500; color: var(--text); }
+    #header-info p { font-size: 12px; color: var(--text-muted); }
     #logout-btn {
       background: transparent;
-      border: 1px solid #8696a0;
-      color: #8696a0;
-      padding: 5px 10px;
-      border-radius: 5px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
+      transition: all 0.2s;
     }
+    #logout-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+
     #messages {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 16px;
+      padding: 24px 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      background: #111b21;
+      gap: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface2) transparent;
     }
-    .message {
-      max-width: 75%;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-    .mine {
-      background: #005c4b;
-      color: #e9edef;
-      align-self: flex-end;
-      border-bottom-right-radius: 2px;
-    }
-    .others {
-      background: #202c33;
-      color: #e9edef;
-      align-self: flex-start;
-      border-bottom-left-radius: 2px;
-    }
-    .msg-username {
-      font-size: 11px;
-      font-weight: bold;
-      color: #00a884;
-      margin-bottom: 3px;
-    }
-    .msg-time {
-      font-size: 10px;
-      color: #8696a0;
-      text-align: right;
-      margin-top: 3px;
-    }
-    #input-area {
-      background: #202c33;
-      padding: 10px 12px;
+    #messages::-webkit-scrollbar { width: 6px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+    .msg-row {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      padding: 6px 20px;
+      gap: 14px;
+      max-width: 780px;
+      width: 100%;
+      margin: 0 auto;
     }
-    #msg-input {
-      flex: 1;
-      padding: 10px 14px;
-      background: #2a3942;
-      border: none;
-      border-radius: 20px;
-      outline: none;
-      font-size: 14px;
-      color: #e9edef;
-    }
-    #msg-input::placeholder { color: #8696a0; }
-    #send-btn {
-      background: #00a884;
-      color: white;
-      border: none;
-      width: 40px; height: 40px;
+    .msg-row.mine { justify-content: flex-end; }
+    .msg-row.others { justify-content: flex-start; }
+
+    .msg-avatar {
+      width: 28px; height: 28px;
       border-radius: 50%;
-      cursor: pointer;
-      font-size: 18px;
       display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
     }
 
-    /* HIDDEN AI BUTTON */
+    .msg-content { display: flex; flex-direction: column; gap: 3px; max-width: 70%; }
+
+    .msg-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      padding-left: 2px;
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+    .mine .bubble {
+      background: var(--surface);
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+    }
+    .others .bubble {
+      background: transparent;
+      color: var(--text);
+      padding-left: 2px;
+    }
+
+    .msg-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 0 2px;
+    }
+    .mine .msg-time { text-align: right; }
+
+    #input-wrap {
+      padding: 16px 20px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    #input-box {
+      width: 100%;
+      max-width: 780px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s;
+    }
+    #input-box:focus-within { border-color: rgba(255,255,255,0.25); }
+    #msg-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      color: var(--text);
+      resize: none;
+      line-height: 1.5;
+      max-height: 120px;
+      font-family: inherit;
+    }
+    #msg-input::placeholder { color: var(--text-muted); }
+    #send-btn {
+      background: var(--send);
+      color: #1a1a1a;
+      border: none;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    #send-btn:hover { opacity: 0.85; }
+
     #ai-fab {
       position: fixed;
-      bottom: 75px;
-      right: 12px;
-      width: 28px; height: 28px;
-      background: rgba(124,58,237,0.15);
-      border-radius: 50%;
+      bottom: 90px;
+      right: 16px;
+      width: 40px; height: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       z-index: 100;
-      font-size: 13px;
-      opacity: 0.3;
-      transition: opacity 0.3s;
+      font-size: 18px;
+      opacity: 0.4;
+      transition: opacity 0.2s, transform 0.2s;
     }
-    #ai-fab:hover { opacity: 1; }
+    #ai-fab:hover { opacity: 1; transform: scale(1.05); }
 
-    /* AI PANEL */
     #ai-panel {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: #111b21;
+      background: var(--bg);
       z-index: 200;
       display: none;
       flex-direction: column;
     }
     #ai-panel.open {
       display: flex;
-      animation: slideUp 0.3s ease;
+      animation: fadeIn 0.2s ease;
     }
-    @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+
     #ai-header {
-      background: #202c33;
-      padding: 12px 16px;
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
+      border-bottom: 1px solid var(--border);
     }
     #ai-back {
-      background: none;
-      border: 1px solid #2a3942;
-      border-radius: 20px;
-      color: #e9edef;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
       font-size: 13px;
       cursor: pointer;
-      padding: 6px 12px;
+      padding: 5px 12px;
+      transition: all 0.2s;
+      font-family: inherit;
     }
-    #ai-avatar {
-      width: 38px; height: 38px;
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    #ai-back:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+    #ai-avatar-icon {
+      width: 32px; height: 32px;
+      background: #c96442;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      font-size: 15px;
     }
-    #ai-info h3 { font-size: 15px; color: #e9edef; }
-    #ai-info p { font-size: 12px; color: #00a884; }
+    #ai-info h3 { font-size: 15px; font-weight: 500; }
+    #ai-info p { font-size: 12px; color: #4caf6e; }
+
     #ai-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 16px;
+      padding: 24px 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface2) transparent;
     }
-    .ai-msg {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1.5;
+    #ai-messages::-webkit-scrollbar { width: 6px; }
+    #ai-messages::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+    .ai-row {
+      display: flex;
+      padding: 6px 20px;
+      gap: 14px;
+      max-width: 780px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .ai-row.user-row { justify-content: flex-end; }
+    .ai-row.bot-row { justify-content: flex-start; }
+
+    .ai-row-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #c96442;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .ai-bubble {
+      max-width: 75%;
+      font-size: 15px;
+      line-height: 1.7;
       word-wrap: break-word;
       white-space: pre-wrap;
+      color: var(--text);
     }
-    .ai-msg.user {
-      background: #005c4b;
-      color: #e9edef;
-      align-self: flex-end;
-      border-bottom-right-radius: 2px;
-    }
-    .ai-msg.bot {
-      background: #202c33;
-      color: #e9edef;
-      align-self: flex-start;
-      border-bottom-left-radius: 2px;
-    }
-    .typing {
-      background: #202c33;
-      color: #8696a0;
-      align-self: flex-start;
+    .user-row .ai-bubble {
+      background: var(--surface);
       padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-style: italic;
+      border-radius: 16px;
+      border-bottom-right-radius: 4px;
     }
-    #ai-input-area {
-      background: #202c33;
-      padding: 10px 12px;
+    .bot-row .ai-bubble {
+      background: transparent;
+      padding: 2px 0;
+    }
+
+    .typing-indicator {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 4px;
+      padding: 10px 0;
     }
+    .dot {
+      width: 6px; height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    #ai-input-wrap {
+      padding: 16px 20px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    #ai-input-box {
+      width: 100%;
+      max-width: 780px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s;
+    }
+    #ai-input-box:focus-within { border-color: rgba(255,255,255,0.25); }
     #ai-input {
       flex: 1;
-      padding: 10px 14px;
-      background: #2a3942;
+      background: transparent;
       border: none;
-      border-radius: 20px;
       outline: none;
-      font-size: 14px;
-      color: #e9edef;
+      font-size: 15px;
+      color: var(--text);
+      resize: none;
+      line-height: 1.5;
+      font-family: inherit;
+      max-height: 120px;
     }
-    #ai-input::placeholder { color: #8696a0; }
+    #ai-input::placeholder { color: var(--text-muted); }
     #ai-send-btn {
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
-      color: white;
+      background: var(--send);
+      color: #1a1a1a;
       border: none;
-      width: 40px; height: 40px;
-      border-radius: 50%;
+      width: 34px; height: 34px;
+      border-radius: 10px;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
     }
+    #ai-send-btn:hover { opacity: 0.85; }
+
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    #empty-state span { font-size: 28px; }
   </style>
 </head>
 <body>
@@ -248,33 +378,40 @@
         <p id="status">connecting...</p>
       </div>
     </div>
-    <button id="logout-btn" onclick="logout()">Logout</button>
+    <button id="logout-btn" onclick="logout()">Log out</button>
   </div>
 
-  <div id="messages"></div>
-
-  <div id="input-area">
-    <input id="msg-input" type="text" placeholder="Type a message..." autocomplete="off"/>
-    <button id="send-btn">➤</button>
+  <div id="messages">
+    <div id="empty-state">
+      <span>💬</span>
+      <p>No messages yet. Say something!</p>
+    </div>
   </div>
 
-  <!-- HIDDEN AI BUTTON -->
-  <div id="ai-fab" onclick="openAI()" title="AI">🟣</div>
+  <div id="input-wrap">
+    <div id="input-box">
+      <textarea id="msg-input" placeholder="Message the group..." rows="1" autocomplete="off"></textarea>
+      <button id="send-btn">➤</button>
+    </div>
+  </div>
 
-  <!-- AI PANEL -->
+  <div id="ai-fab" onclick="openAI()" title="AI Assistant">✦</div>
+
   <div id="ai-panel">
     <div id="ai-header">
-      <button id="ai-back" onclick="closeAI()">← Back to Chat</button>
-      <div id="ai-avatar">🤖</div>
+      <button id="ai-back" onclick="closeAI()">← Back</button>
+      <div id="ai-avatar-icon">✦</div>
       <div id="ai-info">
         <h3>AI Assistant</h3>
         <p>● Online</p>
       </div>
     </div>
     <div id="ai-messages"></div>
-    <div id="ai-input-area">
-      <input id="ai-input" type="text" placeholder="Ask me anything..." autocomplete="off"/>
-      <button id="ai-send-btn">➤</button>
+    <div id="ai-input-wrap">
+      <div id="ai-input-box">
+        <textarea id="ai-input" placeholder="Ask me anything..." rows="1" autocomplete="off"></textarea>
+        <button id="ai-send-btn">➤</button>
+      </div>
     </div>
   </div>
 
@@ -284,7 +421,6 @@
     const username = localStorage.getItem('username');
     if (!token) window.location.href = '/login.html';
 
-    // Load Groq API key from server
     let GROQ_API_KEY = '';
     async function loadConfig() {
       const res = await fetch('/config');
@@ -295,7 +431,7 @@
 
     const socket = io();
     const input = document.getElementById('msg-input');
-    const messages = document.getElementById('messages');
+    const messagesEl = document.getElementById('messages');
     const sendBtn = document.getElementById('send-btn');
     const status = document.getElementById('status');
 
@@ -303,13 +439,20 @@
     socket.on('disconnect', () => { status.textContent = 'offline'; });
 
     sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
 
     function sendMessage() {
       const msg = input.value.trim();
       if (msg) {
         socket.emit('chat message', { text: msg, username });
         input.value = '';
+        input.style.height = 'auto';
       }
     }
 
@@ -319,23 +462,43 @@
     }
 
     socket.on('chat message', (data) => {
-      const div = document.createElement('div');
-      div.classList.add('message', data.username === username ? 'mine' : 'others');
-      if (data.username !== username) {
-        const name = document.createElement('div');
-        name.classList.add('msg-username');
-        name.textContent = data.username;
-        div.appendChild(name);
+      const empty = document.getElementById('empty-state');
+      if (empty) empty.remove();
+
+      const isMine = data.username === username;
+      const row = document.createElement('div');
+      row.classList.add('msg-row', isMine ? 'mine' : 'others');
+
+      if (!isMine) {
+        const av = document.createElement('div');
+        av.classList.add('msg-avatar');
+        av.textContent = data.username[0].toUpperCase();
+        row.appendChild(av);
       }
-      const text = document.createElement('div');
-      text.textContent = data.text;
-      div.appendChild(text);
+
+      const content = document.createElement('div');
+      content.classList.add('msg-content');
+
+      if (!isMine) {
+        const name = document.createElement('div');
+        name.classList.add('msg-name');
+        name.textContent = data.username;
+        content.appendChild(name);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+      bubble.textContent = data.text;
+      content.appendChild(bubble);
+
       const time = document.createElement('div');
       time.classList.add('msg-time');
       time.textContent = getTime();
-      div.appendChild(time);
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
+      content.appendChild(time);
+
+      row.appendChild(content);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     });
 
     function logout() {
@@ -344,7 +507,6 @@
       window.location.href = '/login.html';
     }
 
-    // AI CHAT
     const aiPanel = document.getElementById('ai-panel');
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
@@ -354,27 +516,41 @@
     function openAI() {
       aiPanel.classList.add('open');
       if (aiMessages.children.length === 0) {
-        addAIMessage("Hey! 👋 I'm your AI assistant powered by Groq. Ask me anything!", 'bot');
+        addAIMessage("Hey! I'm your AI assistant powered by Groq. Ask me anything!", 'bot');
       }
     }
 
     function closeAI() { aiPanel.classList.remove('open'); }
 
     aiSendBtn.addEventListener('click', sendAIMessage);
-    aiInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendAIMessage(); });
+    aiInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); }
+    });
+    aiInput.addEventListener('input', () => {
+      aiInput.style.height = 'auto';
+      aiInput.style.height = Math.min(aiInput.scrollHeight, 120) + 'px';
+    });
 
     async function sendAIMessage() {
       const msg = aiInput.value.trim();
       if (!msg) return;
       aiInput.value = '';
+      aiInput.style.height = 'auto';
 
       addAIMessage(msg, 'user');
       aiHistory.push({ role: 'user', content: msg });
 
-      const typing = document.createElement('div');
-      typing.classList.add('typing');
-      typing.textContent = 'AI is typing...';
-      aiMessages.appendChild(typing);
+      const typingRow = document.createElement('div');
+      typingRow.classList.add('ai-row', 'bot-row');
+      const typingAv = document.createElement('div');
+      typingAv.classList.add('ai-row-avatar');
+      typingAv.textContent = '✦';
+      const typingBubble = document.createElement('div');
+      typingBubble.classList.add('ai-bubble');
+      typingBubble.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+      typingRow.appendChild(typingAv);
+      typingRow.appendChild(typingBubble);
+      aiMessages.appendChild(typingRow);
       aiMessages.scrollTop = aiMessages.scrollHeight;
 
       try {
@@ -387,27 +563,39 @@
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             messages: [
-              { role: 'system', content: 'You are a helpful coding assistant specializing in JavaScript and CSS. Keep answers clear, concise and friendly. Use emojis sometimes. Format code nicely.' },
+              { role: 'system', content: 'You are a helpful assistant. Keep answers clear, concise and friendly.' },
               ...aiHistory
             ]
           })
         });
         const data = await res.json();
-        typing.remove();
+        typingRow.remove();
         const reply = data.choices[0].message.content;
         aiHistory.push({ role: 'assistant', content: reply });
         addAIMessage(reply, 'bot');
       } catch (err) {
-        typing.remove();
-        addAIMessage('Sorry, something went wrong! Try again 😅', 'bot');
+        typingRow.remove();
+        addAIMessage('Sorry, something went wrong! Try again.', 'bot');
       }
     }
 
     function addAIMessage(text, type) {
-      const div = document.createElement('div');
-      div.classList.add('ai-msg', type);
-      div.textContent = text;
-      aiMessages.appendChild(div);
+      const row = document.createElement('div');
+      row.classList.add('ai-row', type === 'user' ? 'user-row' : 'bot-row');
+
+      if (type === 'bot') {
+        const av = document.createElement('div');
+        av.classList.add('ai-row-avatar');
+        av.textContent = '✦';
+        row.appendChild(av);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.classList.add('ai-bubble');
+      bubble.textContent = text;
+      row.appendChild(bubble);
+
+      aiMessages.appendChild(row);
       aiMessages.scrollTop = aiMessages.scrollHeight;
     }
   </script>
