@@ -510,12 +510,11 @@ body {
 
   <!-- AI PANEL -->
   <div id="ai-panel">
-    <div id="ai-header">
-      <button id="ai-back" onclick="closeAI()">← Back</button>
+<div id="ai-header">
       <div id="ai-avatar-icon">✦</div>
-      <div id="ai-info">
-        <h3>AI Assistant</h3>
-        <p>● Online</p>
+      <div id="ai-info" onclick="closeAI()" style="cursor:pointer;">
+        <h3>AI Assistant ↩</h3>
+        <p>● tap to go back</p>
       </div>
     </div>
     <div id="ai-messages"></div>
