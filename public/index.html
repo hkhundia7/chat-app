@@ -593,14 +593,15 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); }
     });
 
-    function sendGroupMessage() {
-      const msg = msgInput.value.trim();
-      if (msg) {
-        socket.emit('chat message', { text: msg, username });
-        msgInput.value = '';
-        msgInput.style.height = 'auto';
-      }
-    }
+function sendGroupMessage() {
+  const msg = msgInput.value.trim();
+  if (msg) {
+    socket.emit('chat message', { text: msg, username });
+    msgInput.value = '';
+    msgInput.style.height = 'auto';
+    msgInput.focus();
+  }
+}
 
     socket.on('chat message', (data) => {
       appendMessage(groupMessages, data, false);
@@ -718,14 +719,15 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDM(); }
     });
 
-    function sendDM() {
-      const msg = dmInput.value.trim();
-      if (msg && currentDM) {
-        socket.emit('private message', { to: currentDM, text: msg });
-        dmInput.value = '';
-        dmInput.style.height = 'auto';
-      }
-    }
+function sendDM() {
+  const msg = dmInput.value.trim();
+  if (msg && currentDM) {
+    socket.emit('private message', { to: currentDM, text: msg });
+    dmInput.value = '';
+    dmInput.style.height = 'auto';
+    dmInput.focus();
+  }
+}
 
     socket.on('private message', (data) => {
       const dmMessages = document.getElementById('dm-messages');
