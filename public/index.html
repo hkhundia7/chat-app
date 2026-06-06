@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#212121">
+<style>
+  html { height: -webkit-fill-available; }
+</style>
   <title>Chat App</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,14 +21,17 @@
       --send: #e8a838;
     }
     html, body { height: 100%; }
-    body {
+body {
       font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
       background: var(--bg);
       display: flex;
       flex-direction: column;
       color: var(--text);
       height: 100dvh;
+      max-height: 100dvh;
       overflow: hidden;
+      position: fixed;
+      width: 100%;
     }
 
     /* TABS */
@@ -328,15 +335,18 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    #ai-back {
+#ai-back {
       background: transparent;
       border: 1px solid var(--border);
       border-radius: 8px;
-      color: var(--text-muted);
-      font-size: 12px;
+      color: var(--text);
+      font-size: 13px;
       cursor: pointer;
-      padding: 5px 10px;
+      padding: 6px 14px;
       font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
     #ai-avatar-icon {
       width: 28px; height: 28px;
