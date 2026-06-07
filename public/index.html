@@ -99,6 +99,37 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .icon-btn:hover { background: var(--surface2); }
+    .icon-btn.recording { animation: pulse 0.8s infinite; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    .img-msg {
+      max-width: 200px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    audio {
+      max-width: 200px;
+      height: 36px;
+      border-radius: 20px;
+    }
     .msg-row {
       display: flex;
       padding: 3px 16px;
@@ -441,6 +472,7 @@
     <div class="tab" onclick="showTab('people')">👥 People</div>
   </div>
 
+  <!-- GROUP CHAT -->
   <div id="screen-group" class="screen active">
     <div class="msg-list" id="group-messages"></div>
     <div class="input-wrap">
@@ -451,10 +483,12 @@
     </div>
   </div>
 
+  <!-- PEOPLE -->
   <div id="screen-people" class="screen">
     <div id="users-list"></div>
   </div>
 
+  <!-- PRIVATE CHAT -->
   <div id="screen-dm" class="screen">
     <div id="dm-header">
       <button id="dm-back" onclick="showTab('people')">← Back</button>
@@ -467,20 +501,25 @@
     <div class="msg-list" id="dm-messages"></div>
     <div class="input-wrap">
       <div class="input-box">
+        <button class="icon-btn" id="camera-btn" title="Send photo">📷</button>
+        <input type="file" id="camera-input" accept="image/*" style="display:none"/>
         <textarea class="chat-input" id="dm-input" placeholder="Private message..." rows="1" autocomplete="off"></textarea>
+        <button class="icon-btn" id="mic-btn" title="Hold to record">🎤</button>
         <button class="send-btn" id="dm-send-btn">➤</button>
       </div>
     </div>
   </div>
 
+  <!-- AI FAB -->
   <div id="ai-fab" onclick="openAI()">✦</div>
 
+  <!-- AI PANEL -->
   <div id="ai-panel">
     <div id="ai-header">
       <div id="ai-avatar-icon">✦</div>
       <div id="ai-info" onclick="closeAI()" style="cursor:pointer;">
-        <h3>claude.ai</h3>
-        <p>AI</p>
+        <h3>claude.ai ↩</h3>
+        <p>tap to go back</p>
       </div>
     </div>
     <div id="ai-messages"></div>
@@ -554,6 +593,7 @@
       }
     });
 
+    // GROUP CHAT
     const groupMessages = document.getElementById('group-messages');
     const msgInput = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
@@ -577,7 +617,7 @@
       appendMessage(groupMessages, data, false);
     });
 
-    socket.on('reaction', ({ messageId, emoji, username: reacter }) => {
+    socket.on('reaction', ({ messageId, emoji }) => {
       const bubble = document.querySelector(`[data-id="${messageId}"]`);
       if (!bubble) return;
       const reactionsEl = bubble.closest('.msg-content').querySelector('.reactions');
@@ -669,6 +709,7 @@
       if (activeEmojiPicker) { activeEmojiPicker.remove(); activeEmojiPicker = null; }
     });
 
+    // PRIVATE CHAT
     function openDM(user) {
       currentDM = user;
       document.getElementById('dm-name').textContent = user;
@@ -677,6 +718,79 @@
       showTab('dm');
     }
 
+    // CAMERA
+    const cameraBtn = document.getElementById('camera-btn');
+    const cameraInput = document.getElementById('camera-input');
+
+    cameraBtn.onclick = () => cameraInput.click();
+
+    cameraInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file || !currentDM) return;
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image too large! Max 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        socket.emit('private message', { to: currentDM, image: reader.result });
+      };
+      reader.readAsDataURL(file);
+      cameraInput.value = '';
+    };
+
+    // VOICE
+    const micBtn = document.getElementById('mic-btn');
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    micBtn.addEventListener('pointerdown', async (e) => {
+      e.preventDefault();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          if (blob.size > 0 && currentDM) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              socket.emit('private message', { to: currentDM, voice: reader.result });
+            };
+            reader.readAsDataURL(blob);
+          }
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.textContent = '🔴';
+      } catch (err) {
+        alert('Microphone permission denied!');
+      }
+    });
+
+    micBtn.addEventListener('pointerup', () => {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+      }
+    });
+
+    micBtn.addEventListener('pointerleave', () => {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+      }
+    });
+
+    // DM SEND
     const dmInput = document.getElementById('dm-input');
     const dmSendBtn = document.getElementById('dm-send-btn');
 
@@ -697,8 +811,64 @@
 
     socket.on('private message', (data) => {
       const dmMessages = document.getElementById('dm-messages');
-      appendMessage(dmMessages, data, true);
+      appendDMMessage(dmMessages, data);
     });
+
+    function appendDMMessage(container, data) {
+      const isMine = data.username === username;
+      const row = document.createElement('div');
+      row.classList.add('msg-row', isMine ? 'mine' : 'others');
+
+      if (!isMine) {
+        const av = document.createElement('div');
+        av.classList.add('msg-avatar');
+        av.textContent = data.username[0].toUpperCase();
+        row.appendChild(av);
+      }
+
+      const content = document.createElement('div');
+      content.classList.add('msg-content');
+
+      if (!isMine) {
+        const name = document.createElement('div');
+        name.classList.add('msg-name');
+        name.textContent = data.username;
+        content.appendChild(name);
+      }
+
+      const bubbleWrap = document.createElement('div');
+      bubbleWrap.classList.add('bubble-wrap');
+
+      if (data.image) {
+        const img = document.createElement('img');
+        img.src = data.image;
+        img.classList.add('img-msg');
+        img.onclick = () => window.open(data.image, '_blank');
+        bubbleWrap.appendChild(img);
+      } else if (data.voice) {
+        const audio = document.createElement('audio');
+        audio.src = data.voice;
+        audio.controls = true;
+        bubbleWrap.appendChild(audio);
+      } else if (data.text) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble');
+        bubble.textContent = data.text;
+        bubbleWrap.appendChild(bubble);
+      }
+
+      content.appendChild(bubbleWrap);
+
+      const time = document.createElement('div');
+      time.classList.add('msg-time');
+      const now = new Date();
+      time.textContent = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+      content.appendChild(time);
+
+      row.appendChild(content);
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight;
+    }
 
     function logout() {
       localStorage.removeItem('token');
@@ -706,6 +876,7 @@
       window.location.href = '/login.html';
     }
 
+    // AI CHAT
     const aiPanel = document.getElementById('ai-panel');
     const aiMessages = document.getElementById('ai-messages');
     const aiInput = document.getElementById('ai-input');
@@ -715,7 +886,7 @@
     function openAI() {
       aiPanel.classList.add('open');
       if (aiMessages.children.length === 0) {
-        addAIMessage("Hey!  Ask me anything!", 'bot');
+        addAIMessage("Hey! Ask me anything!", 'bot');
       }
     }
     function closeAI() { aiPanel.classList.remove('open'); }

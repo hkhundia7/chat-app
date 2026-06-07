@@ -79,27 +79,29 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Private message
-  socket.on('private message', ({ to, text }) => {
+// Private message
+socket.on('private message', ({ to, text, image, voice }) => {
+  if (text) {
     const safeText = String(text).replace(/<[^>]*>/g, '').trim();
     if (!safeText || safeText.length > 1000) return;
-    
-    // Find receiver's socket
-    for (const [id, name] of onlineUsers.entries()) {
-      if (name === to) {
-        const msg = {
-          id: Date.now(),
-          text: safeText,
-          username: socket.user.username,
-          isPrivate: true,
-          reactions: {}
-        };
-        io.to(id).emit('private message', msg);
-        socket.emit('private message', msg);
-        break;
-      }
+  }
+
+  for (const [id, name] of onlineUsers.entries()) {
+    if (name === to) {
+      const msg = {
+        id: Date.now(),
+        text: text || null,
+        image: image || null,
+        voice: voice || null,
+        username: socket.user.username,
+        isPrivate: true,
+      };
+      io.to(id).emit('private message', msg);
+      socket.emit('private message', msg);
+      break;
     }
-  });
+  }
+});
 
   // Emoji reaction
   socket.on('reaction', ({ messageId, emoji }) => {
