@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chat-app-v1';
+const CACHE_NAME = 'chat-app-v2';
 const urlsToCache = ['/', '/login.html', '/register.html'];
 
 self.addEventListener('install', (event) => {
